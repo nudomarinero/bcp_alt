@@ -1,0 +1,211 @@
+#!/usr/bin/env node
+
+const { Connection, Request, TYPES } = require('tedious');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
+const dotenv = require('dotenv');
+const fs = require('fs');
+const { stringify } = require("csv-stringify");
+
+dotenv.config();
+
+const options = yargs(hideBin(process.argv))
+  .command('$0 <SQL> [queryout] [file]', 'Bulk copy alternative for MSSQL')
+  .positional('SQL', {
+    describe: 'SQL query',
+    type: 'string'
+  })
+  .positional('queryout', {
+    describe: 'indicates output to a file',
+    type: 'string'
+  })
+  .positional('file', {
+    describe: 'output file',
+    type: 'string'
+  })
+  .option('server', {
+    alias: 'S',
+    type: 'string',
+    description: 'Server name'
+  })
+  .option('user', {
+    alias: 'U',
+    type: 'string',
+    description: 'User name'
+  })
+  .option('password', {
+    alias: 'P',
+    type: 'string',
+    description: 'Password'
+  })
+  .option('database', {
+    alias: 'd',
+    type: 'string',
+    description: 'Database name'
+  })
+  .option('delimiter', {
+    alias: 't',
+    type: 'string',
+    default: '|',
+    description: 'Field delimiter character (default: "|")'
+  })
+  .option('packet_size', {
+    alias: 'a',
+    type: 'string',
+    description: 'Packet size (ignored by now)'
+  })
+  .option('login_timeout', {
+    alias: 'l',
+    type: 'string',
+    description: 'login timeout (ignored by now)'
+  })
+  .option('character_format', {
+    alias: 'c',
+    type: 'boolean',
+    description: 'character format (ignored by now)'
+  })
+  .help()
+  .argv;
+
+//console.info(`${options}`);
+
+// Returns variable from option, env, or default in this order
+function load_env_for_option(option, env_var_name, default_value) {
+  if (typeof(option) === "undefined") {
+    const env_var = process.env[env_var_name];
+    if (typeof(env_var) === "undefined") {
+      console.log(`${env_var_name} could not be loaded`);
+      return default_value;
+    } else {
+      return env_var;
+    }
+  } else {
+    return option;
+  }
+}
+
+// Parse Server string
+function parseServeString(serverString) {
+  const parts = serverString.split(",")
+  if (parts.length === 1) {
+    return {"MSSQL_SERVER": serverString, "MSSQL_PORT": 1433}
+  } else if (parts.length === 2) {
+    return {"MSSQL_SERVER": parts[0], "MSSQL_PORT": parseInt(parts[1])}
+  }
+}
+
+// Load the cofiguration variables
+const serverString = load_env_for_option(options.server, "MSSQL_SERVER");
+const {MSSQL_SERVER, MSSQL_PORT}  = parseServeString(serverString);
+const MSSQL_USER = load_env_for_option(options.user, "MSSQL_USER");
+const MSSQL_PASSWORD = load_env_for_option(options.password, "MSSQL_PASSWORD");
+const MSSQL_DATABASE = load_env_for_option(options.database, "MSSQL_DATABASE");
+
+// Sanity check the positional options
+if ((options.queryout !== "queryout") && (typeof(options.queryout) === "string")) {
+  console.error("At the moment, the second positional parameter must be 'queryout'");
+  process.exitCode = 1
+}
+if ((options.queryout === "queryout") && (typeof(options.file) !== "string")) {
+  console.error("A file name must be provided");
+  process.exitCode = 1
+}
+
+console.log("Config options:", MSSQL_USER, MSSQL_SERVER, MSSQL_PORT, MSSQL_DATABASE, options.file)
+
+// Connection configuration to SQL server.
+const config = {
+  server: MSSQL_SERVER,
+  authentication: {
+    type: 'default',
+    options: {
+      userName: MSSQL_USER,
+      password: MSSQL_PASSWORD
+    }
+  },
+  options: {
+    port: MSSQL_PORT, // Default Port
+    trustServerCertificate: true,
+    database: MSSQL_DATABASE
+  }
+};
+
+// Transform date object to date string
+function dateToDateString(date) {
+  const year = date.getUTCFullYear().toString().padStart(4, '0');
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`
+}
+
+// Transform date object to date and time string
+function dateToDateTimeString(date) {
+  const ymd = dateToDateString(date);
+  const hour = date.getUTCHours().toString().padStart(2, '0');
+  const minute = date.getUTCMinutes().toString().padStart(2, '0');
+  const second = date.getUTCSeconds().toString().padStart(2, '0');
+  const millisecond = date.getUTCMilliseconds().toString().padStart(3, '0');
+  return `${ymd} ${hour}:${minute}:${second}.${millisecond}`
+}
+
+// Parse column and return the appropriate format
+function parseColumn(column) {
+  if (column.metadata.type.type === "DATEN") {
+    return dateToDateString(column.value)
+  } else if (["DATETIME", "DATETIME2N"].includes(column.metadata.type.type)) {
+    return dateToDateTimeString(column.value)
+  } else {
+    return column.value
+  }
+}
+
+function main(config, SQL, output_name) {
+  const writableStream = fs.createWriteStream(output_name);
+  const stringifier = stringify({ header: false, delimiter: '|' });
+  const connection = new Connection(config);
+
+  connection.connect((err) => {
+      if (err) {
+        console.log('Connection Failed');
+        throw err;
+      }
+    
+      executeStatement();
+    });
+    
+  function executeStatement() {
+    const request = new Request(SQL, (err, rowCount) => {
+      if (err) {
+        throw err;
+      }
+  
+      console.log('DONE!');
+      connection.close();
+    });
+
+    request.on('columnMetadata', (columns) => {
+      columns.forEach((column) => {
+        // console.log(column)
+      });
+    });
+  
+    // Emits a 'DoneInProc' event when completed.
+    request.on('row', (columns) => {
+      stringifier.write(columns.map(column => parseColumn(column)));
+    });
+  
+    request.on('done', (rowCount) => {
+      console.log('Done is called');
+    });
+  
+    request.on('doneInProc', (rowCount, more) => {
+      console.log(rowCount + ' rows returned');
+      stringifier.pipe(writableStream);
+    });
+  
+    // In SQL Server 2000 you may need: connection.execSqlBatch(request);
+    connection.execSql(request);
+  }
+}
+
+main(config, options.SQL, options.file);

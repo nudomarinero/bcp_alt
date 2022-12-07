@@ -1,0 +1,47 @@
+{
+  "name": "bcp_alt",
+  "version": "0.0.1",
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "es2020": true
+    }
+  },
+  "scripts": {
+    "lint:check": "eslint src/*",
+    "lint:fix": "eslint src/* --fix",
+    "test": "echo 'TODO: Add a test runner and then update this command'",
+    "build": "pkg src/bcp_alt && mkdir -p dist && mv bcp_alt-* dist",
+    "build_x64": "pkg -t node16-macos-x64,node16-linux-x64,node16-win-x64 src/bcp_alt && mkdir -p dist/x64 && mv bcp_alt-* dist/x64",
+    "build_arm64": "pkg -t node16-macos-arm64,node16-linux-arm64,node16-win-arm64 src/bcp_alt && mkdir -p dist/arm64 && mv bcp_alt-* dist/arm64",
+    "preversion": "git fetch --tags && npm run lint:check && npm test",
+    "version": "npm run build",
+    "postversion": "git push --follow-tags"
+  },
+  "devDependencies": {
+    "eslint": "^7.7.0",
+    "pkg": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "displayName": "bcp alt",
+  "description": "Alternative to the bcp command written in Node",
+  "author": "Jose Sabater",
+  "license": "MIT",
+  "homepage": "https://github.com/nudomarinero/bcp_alt#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nudomarinero/bcp_alt"
+  },
+  "bugs": "https://github.com/nudomarinero/bcp_alt/issues",
+  "keywords": [
+    "SQL"
+  ],
+  "dependencies": {
+    "csv-stringify": "^6.2.3",
+    "dotenv": "^16.0.3",
+    "tedious": "^15.1.2",
+    "yargs": "^17.6.2"
+  }
+}
