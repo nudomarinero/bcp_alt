@@ -164,6 +164,8 @@ function main(config, SQL, output_name) {
   const stringifier = stringify({ header: false, delimiter: '|' });
   const connection = new Connection(config);
 
+  stringifier.pipe(writableStream);
+
   connection.connect((err) => {
       if (err) {
         console.log('Connection Failed');
@@ -200,7 +202,8 @@ function main(config, SQL, output_name) {
   
     request.on('doneInProc', (rowCount, more) => {
       console.log(rowCount + ' rows returned');
-      stringifier.pipe(writableStream);
+      stringifier.unpipe(writableStream);
+      writableStream.close();
     });
   
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
