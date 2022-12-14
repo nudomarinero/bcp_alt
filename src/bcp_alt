@@ -206,8 +206,8 @@ function main(config, SQL, output_name) {
           process.stdout.write(`\r${iRow}`);
           if (iRow % (N_ROWS_NOTIFICATION * 100) == 0) {
             stringifier.unpipe(writableStream);
-            writableStream.close();
-            stringifier.close();
+            writableStream.end();
+            stringifier.end();
             writableStream = fs.createWriteStream(output_name, {flags: "a"});
             stringifier = stringify({ header: false, delimiter: '|' });
             stringifier.pipe(writableStream);
