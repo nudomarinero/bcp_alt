@@ -164,7 +164,7 @@ function parseColumn(column) {
 }
 
 function main(config, SQL, output_name) {
-  let writableStream = fs.createWriteStream(output_name);
+  const writableStream = fs.createWriteStream(output_name);
   let stringifier = stringify({ header: false, delimiter: '|' });
   const connection = new Connection(config);
   let iRow = 0;
@@ -204,19 +204,10 @@ function main(config, SQL, output_name) {
         process.stdout.write(".");
         if (iRow % (N_ROWS_NOTIFICATION * 10) == 0) {
           process.stdout.write(`\r${iRow}`);
-          if (iRow % (N_ROWS_NOTIFICATION * 100) == 0) {
-            stringifier.unpipe(writableStream);
-            writableStream.close();
-            stringifier.end();
-            writableStream = fs.createWriteStream(output_name, {flags: "a"});
-            stringifier = stringify({ header: false, delimiter: '|' });
-            stringifier.pipe(writableStream);
-            // if (global.gc) {
-            //   process.stdout.write(" [gc will be called] ");
-            //   global.gc();
-            //   process.stdout.write(" [gc finished] ");
-            // }
-          }
+          stringifier.unpipe(writableStream);
+          stringifier.end();
+          stringifier = stringify({ header: false, delimiter: '|' });
+          stringifier.pipe(writableStream);
         }
       }
     });
