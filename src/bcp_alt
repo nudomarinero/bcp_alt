@@ -7,9 +7,13 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const { stringify } = require("csv-stringify");
 
+const N_ROWS_NOTIFICATION = 10000;
+const VERSION = "0.0.3";
+
 dotenv.config();
 
 const options = yargs(hideBin(process.argv))
+  .version(VERSION)
   .command('$0 <SQL> [queryout] [file]', 'Bulk copy alternative for MSSQL')
   .positional('SQL', {
     describe: 'SQL query',
@@ -163,6 +167,7 @@ function main(config, SQL, output_name) {
   const writableStream = fs.createWriteStream(output_name);
   const stringifier = stringify({ header: false, delimiter: '|' });
   const connection = new Connection(config);
+  let iRow = 0;
 
   stringifier.pipe(writableStream);
 
@@ -194,6 +199,23 @@ function main(config, SQL, output_name) {
     // Emits a 'DoneInProc' event when completed.
     request.on('row', (columns) => {
       stringifier.write(columns.map(column => parseColumn(column)));
+      iRow++;
+      if (iRow % N_ROWS_NOTIFICATION == 0) {
+        process.stdout.write(".");
+        if (iRow % (N_ROWS_NOTIFICATION * 10) == 0) {
+          process.stdout.write(`\r${iRow}`);
+          if (iRow % (N_ROWS_NOTIFICATION * 100) == 0) {
+            // stringifier.unpipe(writableStream);
+            // writableStream.close();
+            // writableStream = fs.createWriteStream(output_name, {"flags":"a"});
+            if (global.gc) {
+              process.stdout.write(" [gc will be called] ");
+              global.gc();
+              process.stdout.write(" [gc finished] ");
+            }
+          }
+        }
+      }
     });
   
     request.on('done', (rowCount) => {
