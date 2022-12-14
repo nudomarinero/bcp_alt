@@ -204,6 +204,7 @@ function main(config, SQL, output_name) {
         process.stdout.write(".");
         if (iRow % (N_ROWS_NOTIFICATION * 10) == 0) {
           process.stdout.write(`\r${iRow}`);
+          // Hack to overcome a memory leak in csv-stringify (visible only in some architectures)
           stringifier.unpipe(writableStream);
           stringifier.end();
           stringifier = stringify({ header: false, delimiter: '|' });
