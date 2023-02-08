@@ -1,6 +1,6 @@
 {
   "name": "bcp_alt",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "eslintConfig": {
     "env": {
       "node": true,
@@ -12,8 +12,8 @@
     "lint:fix": "eslint src/* --fix",
     "test": "echo 'TODO: Add a test runner and then update this command'",
     "build": "pkg src/bcp_alt && mkdir -p dist && mv bcp_alt-* dist",
-    "build_x64": "pkg -t node16-macos-x64,node16-linux-x64,node16-win-x64 src/bcp_alt && mkdir -p dist/x64 && mv bcp_alt-* dist/x64",
-    "build_arm64": "pkg -t node16-macos-arm64,node16-linux-arm64,node16-win-arm64 src/bcp_alt && mkdir -p dist/arm64 && mv bcp_alt-* dist/arm64",
+    "build_amd64": "pkg -t node16-macos-x64,node16-linux-x64,node16-win-x64 src/bcp_alt && mkdir -p dist/x64 && mv bcp_alt-linux dist/x64/bcp_alt-linux-amd64 && mv bcp_alt-macos dist/x64/bcp_alt-macos-amd64 && mv bcp_alt-win.exe dist/x64/bcp_alt-win-amd64.exe",
+    "build_arm64": "pkg -t node16-macos-arm64,node16-linux-arm64,node16-win-arm64 src/bcp_alt && mkdir -p dist/arm64 && mv bcp_alt-linux dist/arm64/bcp_alt-linux-arm64 && mv bcp_alt-macos dist/arm64/bcp_alt-macos-arm64 && mv bcp_alt-win.exe dist/arm64/bcp_alt-win-arm64.exe",
     "preversion": "git fetch --tags && npm run lint:check && npm test",
     "version": "npm run build",
     "postversion": "git push --follow-tags"
@@ -23,7 +23,7 @@
     "pkg": "^5.8.0"
   },
   "engines": {
-    "node": ">=14"
+    "node": "^16"
   },
   "displayName": "bcp alt",
   "description": "Alternative to the bcp command written in Node",
