@@ -1,6 +1,6 @@
 {
   "name": "bcp_alt",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "eslintConfig": {
     "env": {
       "node": true,
