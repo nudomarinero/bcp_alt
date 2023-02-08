@@ -1,6 +1,6 @@
 {
   "name": "bcp_alt",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "eslintConfig": {
     "env": {
       "node": true,
@@ -23,7 +23,7 @@
     "pkg": "^5.8.0"
   },
   "engines": {
-    "node": "^16"
+    "node": ">=14"
   },
   "displayName": "bcp alt",
   "description": "Alternative to the bcp command written in Node",
