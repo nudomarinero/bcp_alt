@@ -185,9 +185,7 @@ function main(config, SQL, output_name) {
       if (err) {
         throw err;
       }
-  
       console.log('DONE!');
-      connection.close();
     });
 
     request.on('columnMetadata', (columns) => {
@@ -219,6 +217,7 @@ function main(config, SQL, output_name) {
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.execSql(request);
   }
+
 }
 
 main(config, options.SQL, options.file);
