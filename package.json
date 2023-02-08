@@ -23,7 +23,7 @@
     "pkg": "^5.8.0"
   },
   "engines": {
-    "node": ">=14"
+    "node": "^16"
   },
   "displayName": "bcp alt",
   "description": "Alternative to the bcp command written in Node",
