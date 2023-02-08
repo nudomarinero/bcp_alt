@@ -8,7 +8,7 @@ const fs = require('fs');
 const { stringify } = require("csv-stringify");
 
 const N_ROWS_NOTIFICATION = 10000;
-const VERSION = "0.0.3";
+const VERSION = "0.0.4";
 
 dotenv.config();
 
